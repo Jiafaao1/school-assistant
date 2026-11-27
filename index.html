@@ -1404,6 +1404,8 @@ function parseVisionJSON(text){
     const title = String(it.title || "").trim() || "未命名事项";
     const raw = String(it.raw_time || "").trim();
     const formRaw = String(it.form_time || "").trim();
+    // 模型常把标签一起抄进来（"最近截止 11月30日 23:59"），去掉前缀只留时间
+    const formTxt = formRaw.replace(/^(最近)?(报名|提交)?截止(时间|日期)?\s*[:：]?\s*/, "").trim() || formRaw;
     let note = String(it.note || "").trim();
 
     // 状态：优先采信模型给的；没给就按 raw_time 是否有值推断
@@ -1423,11 +1425,11 @@ function parseVisionJSON(text){
     }
 
     // 红线二：表单时间只进备注，永远不进 due
-    if(formRaw) note += `（表单界面显示截止：${formRaw}，仅作参考）`;
+    if(formTxt) note += `（表单界面显示截止：${formTxt}，仅作参考）`;
 
     // 状态说"没有"，但模型又给了原文时间：不当主时间，只保留在备注里
     // （跟表单时间同一个值就不重复写了）
-    if(state === "none" && raw && raw !== formRaw) note += `（原文另有时间「${raw}」，未作主时间）`;
+    if(state === "none" && raw && raw !== formTxt) note += `（原文另有时间「${raw}」，未作主时间）`;
 
     let kind = OK.indexOf(it.kind) >= 0 ? it.kind : "";
     if(!kind){
